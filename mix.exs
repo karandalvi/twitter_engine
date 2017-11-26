@@ -13,7 +13,7 @@ defmodule TwitterEngine.Mixfile do
   end
 
   def escript do
-    [main_module: TwitterEngine]
+    [main_module: Twitter_Engine]
   end
 
   # Run "mix help compile.app" to learn about applications.
