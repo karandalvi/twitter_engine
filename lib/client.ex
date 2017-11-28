@@ -36,6 +36,22 @@ defmodule Client do
         send pid, {:follow, userName}
     end
 
+    def lookupTweets(pid) do
+        send pid, {:lookupTweets}
+    end
+
+    def lookupTag(pid, tagName) do
+        send pid, {:lookupTag, tagName}
+    end
+
+    def lookupMention(pid, userName) do
+        send pid, {:lookupMention, userName}
+    end
+
+    def retweet(pid, tweetID) do
+        send pid, {:retweet, tweetID}
+    end
+
     defp process({:connectToServer, serverPID}, state) do
         send serverPID, {:connect, self}
         receive do
@@ -58,12 +74,34 @@ defmodule Client do
     defp process({:follow, userName}, state) do
         usr = Enum.at(state, 0)
         e = Enum.at(state, 1)
-        Engine.followUser(e, usr, userName, self)
+        Engine.followUser(e, usr, userName)
     end
 
     defp process({:deregister}, state) do
         usr = Enum.at(state, 0)
         e = Enum.at(state, 1)
         Engine.deregister(e, usr)
+    end
+
+    defp process({:lookupTag, tagName}, state) do
+        e = Enum.at(state, 1)
+        Engine.lookupTag(e, tagName, self)
+    end
+
+    defp process({:lookupMention, userName}, state) do
+        e = Enum.at(state, 1)
+        Engine.lookupMention(e, userName, self)
+    end
+
+    defp process({:lookupTweets}, state) do
+        username = Enum.at(state, 0)
+        e = Enum.at(state, 1)
+        Engine.lookupTweets(e, username, self)
+    end
+
+    defp process({:retweet, tweetID}, state) do
+        username = Enum.at(state, 0)
+        e = Enum.at(state, 1)
+        Engine.retweet(e, username, tweetID)
     end
 end

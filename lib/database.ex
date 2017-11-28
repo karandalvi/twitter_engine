@@ -20,6 +20,7 @@ defmodule Database do
         :ets.new(:users,   [:set, :protected, :named_table])
         :ets.new(:mentions,[:set, :protected, :named_table])
         :ets.new(:follows, [:set, :protected, :named_table])
+        :ets.new(:following, [:set, :protected, :named_table])
         :ets.new(:hashtags, [:set, :protected, :named_table])
         loop(seq)
     end 
@@ -31,8 +32,12 @@ defmodule Database do
         loop(seq)
     end
 
+    # -----------------------------------------------------
+    # Client APIs
+    # -----------------------------------------------------
+
     def registerUser(pid, userName) do
-        send(pid, {:insert, :users, userName})
+        send(pid, {:register, :users, userName})
     end
 
     def insert(pid, table, value, caller) do
@@ -41,9 +46,15 @@ defmodule Database do
 
     def lookup(pid, table, key, caller) do
         send(pid, {:lookup, table, key, self})
-
         receive do
           {:response, value} -> value
+        end
+    end
+
+    def tweet(pid, key, caller) do
+        send(pid, {:tweet, key, self})
+        receive do
+          {:tweetCommit, value} -> value
         end
     end
 
@@ -55,26 +66,40 @@ defmodule Database do
         send(pid, {:follow, followerName, followingName})
     end
 
-    defp process({:insert, :tweets, tweetData, caller}, seq) do
+    # -----------------------------------------------------
+    # Server Callback
+    # -----------------------------------------------------
+
+    defp process({:register, :users, userName}, seq) do
+        :ets.insert_new(:users, {userName, []})
+        :ets.insert_new(:follows, {userName, %{}})
+        :ets.insert_new(:following, {userName, %{}})
+        :ets.insert_new(:mentions, {userName, []})
+    end
+
+    defp process({:insert, :mentions, value, caller}, seq) do
+        :ets.insert(:mentions, value)    
+    end
+
+    defp process({:follow, followerName, followingName}, seq) do
+        [{_userName, flist}] = :ets.lookup(:follows, followingName)
+        :ets.insert(:follows, {followingName, Map.put(flist, followerName, nil)})
+        [{_userName, flist}] = :ets.lookup(:following, followerName)
+        :ets.insert(:following, {followerName, Map.put(flist, followingName, nil)})
+    end
+    
+    defp process({:tweet, tweetData, caller}, seq) do
         tweetID = Sequence.next(seq, self)
         tweetTime = :os.system_time()
         [tweetUser, _tweetID, tweetMessage] = tweetData
         [{_userName, tweetList}] = :ets.lookup(:users, tweetUser)
-        
-        mentionedUsers = Regex.scan(~r/@[a-z|A-Z|0-9|.|_]*/, tweetMessage)
-        for x <- mentionedUsers do
-            [user] = x
-            user = String.replace_leading(user, "@", "")
-            m = :ets.lookup(:mentions, user)
-            if (m == []) do
-                :ets.insert(:mentions, {user, [tweetID]})
-            else
-                [{_userName, mentionList}] = m 
-                :ets.insert(:mentions, {user, [tweetID] ++ mentionList})
-            end
-            
-        end
+        :ets.insert(:tweets, {tweetID, tweetData ++ [tweetTime]})
+        :ets.insert(:users, {tweetUser, [tweetID] ++ tweetList})
+        processHashTags(tweetID, tweetMessage)
+        send caller, {:tweetCommit, {tweetID, tweetData ++ [tweetTime]}}
+    end
 
+    defp processHashTags(tweetID, tweetMessage) do
         hashTags = Regex.scan(~r/#[a-z|A-Z|0-9]*/, tweetMessage)
         for x <- hashTags do
             [tag] = x
@@ -86,30 +111,11 @@ defmodule Database do
                 [{_tagName, tagList}] = list
                 :ets.insert(:hashtags, {tag, [tweetID] ++ tagList})
             end
-        end
-        
-        :ets.insert(:tweets, {tweetID, tweetData ++ [tweetTime]})
-        :ets.insert(:users, {tweetUser, [tweetID] ++ tweetList})
-        send caller, {:tweetStored, tweetID, {tweetID, tweetData ++ [tweetTime]}}
-    end
-
-    defp process({:insert, :users, userName}, seq) do
-        :ets.insert_new(:users, {userName, []})
-        :ets.insert_new(:follows, {userName, %{}})
-        :ets.insert_new(:mentions, {userName, []})
+        end        
     end
 
     defp process({:lookup, table, key, caller}, _seq) do
         send(caller, {:response, :ets.lookup(table, key)})
     end
 
-    defp process({:mention, userName, tweetID}, seq) do
-        [{_userName, tweetList}] = :ets.lookup(:mentions, userName)
-        :ets.insert(:mentions, {userName, [tweetID] ++ tweetList})
-    end
-
-    defp process({:follow, followerName, followingName}, seq) do
-        [{_userName, followList}] = :ets.lookup(:follows, followingName)
-        :ets.insert(:follows, {followingName, Map.put(followList, followerName, nil)})
-    end
 end
