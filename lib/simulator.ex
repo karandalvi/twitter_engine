@@ -5,7 +5,7 @@ defmodule Simulator do
             startServer()
         else
             if (String.downcase(Enum.at(args, 2)) == "clients") do
-                for x <- 1..10 do
+                for x <- 1..100 do
                     startClient(:clients, Enum.at(args, 1), x)
                 end
             end
@@ -74,13 +74,13 @@ defp simulateClient(pid, clientUsername) do
     if String.equivalent?("Client1", clientUsername) do
         #do nothing 
     else
-        #if not Client1, set this client to follow Client1
+        #if not Client1, set this client to follow "Client1"
         Client.follow(pid, "Client1")
         Client.lookupTag(pid, "TryingOutElixir")
     end
 
     :timer.sleep(500)
-    IO.puts "Simulator: #{clientUsername} will tweet 15 messages in the next 30 seconds"
+    IO.puts "Simulator: #{clientUsername} will tweet 8 messages in the next 30 seconds"
     tweets = ["hello world! #TryingOutElixir - from #{clientUsername}", 
               "I am #{clientUsername}!", 
               "I started using Honor 6x?",
