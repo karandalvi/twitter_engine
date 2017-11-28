@@ -1,0 +1,9 @@
+{application,simulator,
+             [{applications,[kernel,stdlib,elixir,logger,heap]},
+              {description,"simulator"},
+              {modules,['Elixir.Client','Elixir.Database','Elixir.Engine',
+                        'Elixir.Sequence','Elixir.Server','Elixir.Simulator',
+                        'Elixir.Twitter_Engine']},
+              {registered,[]},
+              {vsn,"0.1.0"},
+              {extra_applications,[logger]}]}.
