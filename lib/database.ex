@@ -22,6 +22,7 @@ defmodule Database do
         :ets.new(:follows, [:set, :protected, :named_table])
         :ets.new(:following, [:set, :protected, :named_table])
         :ets.new(:hashtags, [:set, :protected, :named_table])
+        :ets.new(:loggedInUsers, [:set, :protected, :named_table])
         loop(seq)
     end 
 
@@ -38,6 +39,14 @@ defmodule Database do
 
     def registerUser(pid, userName) do
         send(pid, {:register, :users, userName})
+    end
+
+    def login(pid, userName, userPID) do
+        send(pid, {:login, userName, userPID})    
+    end
+
+    def logout(pid, userName) do
+        send(pid, {:logout, userName})    
     end
 
     def insert(pid, table, value, caller) do
@@ -118,4 +127,11 @@ defmodule Database do
         send(caller, {:response, :ets.lookup(table, key)})
     end
 
+    defp process({:login, userName, userPID}, seq) do
+        :ets.insert(:loggedInUsers, {userName, userPID})
+    end
+
+    defp process({:logout, userName}, seq) do
+        :ets.delete(:loggedInUsers, userName)
+    end
 end

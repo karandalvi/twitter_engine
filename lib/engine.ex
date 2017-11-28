@@ -61,15 +61,18 @@ defmodule Engine do
   end
 
   def handle_cast({:register, userName, userPID}, list) do
-    userData = Database.lookup(Enum.at(list,0), :users, userName, self)
+    db = Enum.at(list,0)
+    userData = Database.lookup(db, :users, userName, self)
     if userData == [] do
-      Database.registerUser(Enum.at(list,0), userName)
+      Database.registerUser(db, userName)
     end
+    Database.login(db, userName, userPID)
     IO.puts "User Logged In: " <> userName
     {:noreply, [Enum.at(list,0), Map.put(Enum.at(list, 1), userName, userPID)]}
   end
 
   def handle_cast({:deregister, userName}, list) do
+    Database.logout(Enum.at(list,0), userName)
     IO.puts "User Logged Out: " <> userName
     {:noreply, [Enum.at(list,0), Map.delete(Enum.at(list, 1), userName)]}
   end
@@ -78,8 +81,9 @@ defmodule Engine do
     db = Enum.at(list,0)
     {tweetID, [tUser, tRT, tMessage, tTime]} = Database.tweet(db, [userName, nil, tweetMessage], self)
     displayTweet = "#{tUser} -> #{tMessage}"
-    loggedInUsers = Enum.at(list, 1)
-    Client.displayTweet(Map.get(loggedInUsers, tUser), displayTweet)
+    # loggedInUsers = Enum.at(list, 1)
+    [{_user, pid}] = Database.lookup(db, :loggedInUsers, tUser, self)
+    Client.displayTweet(pid, displayTweet)
     
     mentionedUsers = Regex.scan(~r/@[a-z|A-Z|0-9|.|_]*/, tweetMessage)
     for x <- mentionedUsers do
@@ -92,16 +96,18 @@ defmodule Engine do
             [{_userName, mentionList}] = m 
             Database.insert(db, :mentions, {user, [tweetID] ++ mentionList}, self)
         end
-        if user != tUser and Map.get(loggedInUsers, user) != nil do
-          Client.displayTweet(Map.get(loggedInUsers, user), displayTweet)
+        if user != tUser and Database.lookup(db, :loggedInUsers, user, self) != [] do
+          [{_user, pid}] = Database.lookup(db, :loggedInUsers, user, self)
+          Client.displayTweet(pid, displayTweet)
         end
     end
 
     followers = Database.lookup(db, :follows, userName, self)
     [{_user, followers}] = followers
     for {k, v} <- followers do
-      if (Map.get(loggedInUsers, k) != nil) do  
-        Client.displayTweet(Map.get(loggedInUsers, k), displayTweet)
+      if (Database.lookup(db, :loggedInUsers, k, self) != []) do 
+        [{_user, pid}] = Database.lookup(db, :loggedInUsers, k, self)
+        Client.displayTweet(pid, displayTweet)
       end
     end
     {:noreply, list}
@@ -123,15 +129,17 @@ defmodule Engine do
       tweetID = srcTweetID
     end
     Database.tweet(db, [userName, tweetID, tweetMessage], self)
-    loggedInUsers = Enum.at(list, 1)
+    # loggedInUsers = Enum.at(list, 1)
     displayTweet = "#{tOwner} -> #{tweetMessage} [Retweeted by #{userName}]"
-    Client.displayTweet(Map.get(loggedInUsers, userName), displayTweet)
+    [{_user, pid}] = Database.lookup(db, :loggedInUsers, userName, self)
+    Client.displayTweet(pid, displayTweet)
 
     followers = Database.lookup(db, :follows, userName, self)
     [{_user, followers}] = followers
     for {k, v} <- followers do
-      if (Map.get(loggedInUsers, k) != nil) do  
-        Client.displayTweet(Map.get(loggedInUsers, k), displayTweet)
+      if (Database.lookup(db, :loggedInUsers, k, self) != []) do  
+        [{_user, pid}] = Database.lookup(db, :loggedInUsers, k, self)
+        Client.displayTweet(pid, displayTweet)
       end
     end
     {:noreply, list}
@@ -173,12 +181,10 @@ defmodule Engine do
 
   def handle_cast({:lookupTweet, userName, caller}, list) do
     db = Enum.at(list, 0)
-    IO.inspect Database.lookup(db, :following, userName, self)
     [{_username, following}] = Database.lookup(db, :following, userName, self)
     h = Heap.min()
     
     h = List.flatten(for {k, v} <- following do
-      IO.inspect Database.lookup(db, :users, k, self)
       [{_user, tweets}] = Database.lookup(db, :users, k, self)
       for x <- tweets do
         [{_tweetID, [tUser, tRT, tMessage, tTime]}] = Database.lookup(db, :tweets, x, self)
