@@ -68,13 +68,13 @@ defmodule Engine do
     end
     Database.login(db, userName, userPID)
     IO.puts "User Logged In: " <> userName
-    {:noreply, [Enum.at(list,0), Map.put(Enum.at(list, 1), userName, userPID)]}
+    {:noreply, list}
   end
 
   def handle_cast({:deregister, userName}, list) do
     Database.logout(Enum.at(list,0), userName)
     IO.puts "User Logged Out: " <> userName
-    {:noreply, [Enum.at(list,0), Map.delete(Enum.at(list, 1), userName)]}
+    {:noreply, list}
   end
 
   def handle_cast({:tweet, userName, tweetMessage}, list) do
@@ -114,10 +114,12 @@ defmodule Engine do
   end
 
   def handle_cast({:follow, userName, searchName}, list) do
-    db = Enum.at(list, 0)
-    userData = Database.lookup(db, :users, searchName, self)
-    if userData != [] do
-      Database.follow(db, userName, searchName)  
+    if userName != searchName do 
+      db = Enum.at(list, 0)
+      userData = Database.lookup(db, :users, searchName, self)
+      if userData != [] do
+        Database.follow(db, userName, searchName)  
+      end
     end
     {:noreply, list}
   end

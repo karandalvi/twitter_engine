@@ -11,6 +11,9 @@ defmodule Client do
             {:displayTweet, tweetMessage} -> process({:displayTweet, tweetMessage}, state)
             {:follow, userName} -> process({:follow, userName}, state)
             {:logout} -> process({:deregister}, state)
+            {:keepTweeting, tweetMessage} -> process({:tweet, tweetMessage}, state)
+                                             :timer.sleep(:rand.uniform(10) * 1000)
+                                             send self, {:keepTweeting, tweetMessage}
             message -> process(message, state)
         end
         loop(state)
@@ -68,7 +71,7 @@ defmodule Client do
     end
 
     defp process({:displayTweet, message}, state) do
-        IO.puts message
+        # IO.puts message
     end
 
     defp process({:follow, userName}, state) do
