@@ -99,6 +99,9 @@ defmodule Database do
     
     defp process({:tweet, tweetData, caller}, seq) do
         tweetID = Sequence.next(seq, self)
+        if rem(tweetID, 6000) == 0 do
+            IO.puts tweetID
+        end
         tweetTime = :os.system_time()
         [tweetUser, _tweetID, tweetMessage] = tweetData
         [{_userName, tweetList}] = :ets.lookup(:users, tweetUser)
