@@ -4,7 +4,7 @@ defmodule Simulator do
         if(hd(args) == "server") do
             startServer()
         else
-            if (String.downcase(Enum.at(args, 2)) == "clients") do
+            if (String.downcase(Enum.at(args, 0)) == "clients") do
                 for x <- 1..100 do
                     startClient(:clients, Enum.at(args, 1), x)
                 end
@@ -72,18 +72,17 @@ end
 
 defp simulateClient(pid, clientUsername) do
     if String.equivalent?("Client1", clientUsername) do
-        #do nothing 
+        IO.puts "true"
     else
         #if not Client1, set this client to follow "Client1"
         Client.follow(pid, "Client1")
-        Client.lookupTag(pid, "TryingOutElixir")
     end
 
     :timer.sleep(500)
     IO.puts "Simulator: #{clientUsername} will tweet 8 messages in the next 30 seconds"
-    tweets = ["hello world! #TryingOutElixir - from #{clientUsername}", 
+    tweets = ["hello world! #TryingOutElixir", 
               "I am #{clientUsername}!", 
-              "I started using Honor 6x?",
+              "I started using Honor 6x!",
               "Works fine till now. I like it's display",
               "#twitter seems interesting! #like",
               "Started using Google Home Mini Too!!",
@@ -94,7 +93,25 @@ defp simulateClient(pid, clientUsername) do
         :timer.sleep(2000)
         Client.tweet(pid, Enum.at(tweets, x))    
     end
-    :timer.sleep(10000)
+
+    
+    if String.equivalent?("Client2", clientUsername) do
+        Client.logout(pid)
+        :timer.sleep(100)
+        IO.puts "Simulator: #{clientUsername} logged out"
+        IO.puts "--------------------------------------------------------"
+        :timer.sleep(15000)
+        Client.connectToServer(pid, :global.whereis_name(:server))
+        IO.puts "Simulator: #{clientUsername} logged in again"
+        IO.puts "Simulator: #{clientUsername} fetching tweets from subscribed users"
+        Client.lookupTweets(pid)
+        :timer.sleep(3000)
+        IO.puts "--------------------------------------------------------"
+        IO.puts "Simulator: #{clientUsername} fetching tweets with hashtag #twitter"        
+    end
+
+    Client.lookupTag(pid, "TryingOutElixir")
+    :timer.sleep(5000)
     Client.logout(pid)
 end
 
