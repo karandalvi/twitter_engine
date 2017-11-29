@@ -3,7 +3,7 @@ defmodule TwitterEngine.Mixfile do
 
   def project do
     [
-      app: :twitter_engine,
+      app: :simulator,
       version: "0.1.0",
       elixir: "~> 1.5",
       start_permanent: Mix.env == :prod,
@@ -13,7 +13,7 @@ defmodule TwitterEngine.Mixfile do
   end
 
   def escript do
-    [main_module: Twitter_Engine]
+    [main_module: Simulator]
   end
 
   # Run "mix help compile.app" to learn about applications.
