@@ -3,7 +3,7 @@ defmodule TwitterEngine.Mixfile do
 
   def project do
     [
-      app: :twitter_engine,
+      app: :simulator,
       version: "0.1.0",
       elixir: "~> 1.5",
       start_permanent: Mix.env == :prod,
@@ -13,7 +13,7 @@ defmodule TwitterEngine.Mixfile do
   end
 
   def escript do
-    [main_module: TwitterEngine]
+    [main_module: Simulator]
   end
 
   # Run "mix help compile.app" to learn about applications.
@@ -26,6 +26,7 @@ defmodule TwitterEngine.Mixfile do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:heap, "~> 2.0"}
       # {:dep_from_hexpm, "~> 0.3.0"},
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"},
     ]
