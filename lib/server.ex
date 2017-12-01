@@ -1,12 +1,12 @@
 defmodule Server do
-    
+   
     def start() do
         spawn(fn -> init end)
     end
 
     def init do
         db = Database.start
-        engines = (for x <- 0..31 do
+        engines = (for x <- 0..255 do
             {:ok, engine} = Engine.start_link(db)    
             engine
         end)
@@ -20,9 +20,10 @@ defmodule Server do
         loop(engine)
     end
 
-    defp process({:connect, caller}, engine) do
-        id = :rand.uniform(32)
-        send caller, {:response, Enum.at(engine, id-1)}
+    defp process({:connect, caller, username}, engine) do
+        hash = Base.encode16(:crypto.hash(:sha256, username))
+        {:ok, <<id>>} = Base.decode16(String.at(hash,0) <> String.at(hash, 1))
+        send caller, {:response, Enum.at(engine, id)}
     end
-
+    
 end
