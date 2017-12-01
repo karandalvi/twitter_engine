@@ -6,8 +6,9 @@ defmodule Server do
 
     def init do
         db = Database.start
+        seq = Sequence.start
         engines = (for x <- 0..255 do
-            {:ok, engine} = Engine.start_link(db)    
+            {:ok, engine} = Engine.start_link(seq)    
             engine
         end)
         loop(engines)
