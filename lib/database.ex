@@ -16,13 +16,13 @@ defmodule Database do
 
     def init do
         seq = Sequence.start
-        :ets.new(:tweets,  [:set, :protected, :named_table])
-        :ets.new(:users,   [:set, :private, :named_table])
-        :ets.new(:mentions,[:set, :protected, :named_table])
-        :ets.new(:follows, [:set, :protected, :named_table])
-        :ets.new(:following, [:set, :protected, :named_table])
-        :ets.new(:hashtags, [:set, :protected, :named_table])
-        :ets.new(:loggedInUsers, [:set, :protected, :named_table])
+        :ets.new(:tweets,  [:set, :public, :named_table])
+        :ets.new(:users,   [:set, :public, :named_table])
+        :ets.new(:mentions,[:set, :public, :named_table])
+        :ets.new(:follows, [:set, :public, :named_table])
+        :ets.new(:following, [:set, :public, :named_table])
+        :ets.new(:hashtags, [:set, :public, :named_table])
+        :ets.new(:loggedInUsers, [:set, :public, :named_table])
         loop(seq)
     end 
 

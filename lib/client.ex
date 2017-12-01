@@ -58,7 +58,9 @@ defmodule Client do
                                 process({:login}, state)
                             end
 
-                            :timer.sleep(:rand.uniform(5000))
+                            r = :rand.uniform(50)
+                            i = div(id, 100)
+                            :timer.sleep(r * i)
                             send self, {:simulate, size, id, server}
             message -> process(message, state)
         end
