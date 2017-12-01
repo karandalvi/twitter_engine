@@ -17,7 +17,7 @@ defmodule Database do
     def init do
         seq = Sequence.start
         :ets.new(:tweets,  [:set, :protected, :named_table])
-        :ets.new(:users,   [:set, :protected, :named_table])
+        :ets.new(:users,   [:set, :private, :named_table])
         :ets.new(:mentions,[:set, :protected, :named_table])
         :ets.new(:follows, [:set, :protected, :named_table])
         :ets.new(:following, [:set, :protected, :named_table])
