@@ -18,7 +18,7 @@ defmodule Simulator do
                     Node.connect String.to_atom(ip)
                     :global.sync()
                     s = :global.whereis_name(:server)
-                    size = 40000
+                    size = String.to_integer(Enum.at(args, 2))
                     clients = (for x <- 1..size do
                         clientUsername = "client_" <> Integer.to_string(x)  
                         pid = Client.start(clientUsername)
